@@ -16,7 +16,7 @@ router.get("/fetchallnotes", fetchuser, async (req, res) => {
   }
 });
 
-// ROUTE 1 : Add a note using : POST "api/notes/addnote". Login required
+// ROUTE 1 : Add a note using : GET "api/notes/addnote". Login required
 
 router.get(
   "/addnote",
@@ -50,5 +50,74 @@ router.get(
     }
   }
 );
+
+// ROUTE 3 : Update a note using : PUT "api/notes/updatenote". Login required
+
+router.put("/updatenote/:id", fetchuser, async (req, res) => {
+  try {
+    const { title, description, tag } = req.body;
+
+    const newNote = {};
+
+    if (title) {
+      newNote.title = title;
+    }
+    if (description) {
+      newNote.description = description;
+    }
+    if (tag) {
+      newNote.tag = tag;
+    }
+
+    // Find the note to be updated
+
+    let note = await Note.findById(req.params.id);
+    if (!note) {
+      return res.status(404).send("Note not found");
+    }
+
+    //Check the user
+
+    if (note.user.toString() !== req.user.id) {
+      return res.status(401).send("Unauthorized");
+    }
+
+    note = await Note.findByIdAndUpdate(req.params.id, {$set: newNote},{new:true});
+
+    res.json(note);
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).send("Internal server Error");
+  }
+});
+
+// ROUTE 4 : Delete a note using : DELETE "api/notes/updatenote". Login required
+
+router.delete("/deletenote/:id", fetchuser, async (req, res) => {
+    try {
+  
+      // Find the note to be deleted
+  
+      let note = await Note.findById(req.params.id);
+      if (!note) {
+        return res.status(404).send("Note not found");
+      }
+  
+      //Check the user
+  
+      if (note.user.toString() !== req.user.id) {
+        return res.status(401).send("Unauthorized");
+      }  
+  
+      note = await Note.findByIdAndDelete(req.params.id);
+  
+      res.json({"success" : "Note has been deleted successfully"});
+  
+    } catch (error) {
+      console.error(error.message);
+      res.status(500).send("Internal server Error");
+    }
+  });
 
 module.exports = router;
